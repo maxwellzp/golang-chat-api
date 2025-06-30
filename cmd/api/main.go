@@ -1,30 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"github.com/maxwellzp/golang-chat-api/internal/auth"
 	"github.com/maxwellzp/golang-chat-api/internal/config"
 	"github.com/maxwellzp/golang-chat-api/internal/logger"
 	"github.com/maxwellzp/golang-chat-api/internal/message"
 	"github.com/maxwellzp/golang-chat-api/internal/room"
+	"log"
 	"net/http"
-	"time"
 )
 
 func main() {
-	url := "localhost:8080"
+	sugar, err := logger.NewLogger()
+	if err != nil {
+		log.Fatalf("failed to initialize logger: %v", err)
+	}
 
-	sugar, _ := logger.NewLogger()
-	sugar.Infow("failed to fetch URL",
-		// Structured context as loosely typed key-value pairs.
-		"url", url,
-		"attempt", 5,
-		"backoff", time.Second,
-	)
-	sugar.Infof("Failed to fetch URL: %s", url)
-
-	cfg := config.Load()
-	fmt.Printf("%+v\n", cfg)
+	cfg := config.Load(sugar)
+	sugar.Infof("%+v", cfg)
 
 	// REST API Handlers
 	router := http.NewServeMux()
@@ -33,10 +26,10 @@ func main() {
 	message.NewMessageHandler(router)
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + cfg.Server.Port,
 		Handler: router,
 	}
 
-	fmt.Println("Server running on port 8080")
+	sugar.Infof("Server running on port :%s", cfg.Server.Port)
 	server.ListenAndServe()
 }
