@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/maxwellzp/golang-chat-api/internal/auth"
 	"github.com/maxwellzp/golang-chat-api/internal/config"
+	"github.com/maxwellzp/golang-chat-api/internal/room"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -27,6 +28,7 @@ func main() {
 
 	router := http.NewServeMux()
 	auth.NewAuthHandler(router)
+	room.NewRoomHandler(router)
 
 	server := &http.Server{
 		Addr:    ":8080",
