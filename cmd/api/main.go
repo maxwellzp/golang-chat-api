@@ -4,22 +4,21 @@ import (
 	"fmt"
 	"github.com/maxwellzp/golang-chat-api/internal/auth"
 	"github.com/maxwellzp/golang-chat-api/internal/config"
+	"github.com/maxwellzp/golang-chat-api/internal/logger"
 	"github.com/maxwellzp/golang-chat-api/internal/message"
 	"github.com/maxwellzp/golang-chat-api/internal/room"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
 )
 
 func main() {
 	url := "localhost:8080"
-	logger, _ := zap.NewProduction()
-	defer logger.Sync() // flushes buffer, if any
-	sugar := logger.Sugar()
+
+	sugar, _ := logger.NewLogger()
 	sugar.Infow("failed to fetch URL",
 		// Structured context as loosely typed key-value pairs.
 		"url", url,
-		"attempt", 3,
+		"attempt", 5,
 		"backoff", time.Second,
 	)
 	sugar.Infof("Failed to fetch URL: %s", url)
