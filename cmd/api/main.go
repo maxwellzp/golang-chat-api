@@ -2,33 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/maxwellzp/golang-chat-api/internal/auth"
 	"github.com/maxwellzp/golang-chat-api/internal/config"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
 )
-
-type ApiHandler struct{}
-
-func NewApiHandler(router *http.ServeMux) {
-	handler := &ApiHandler{}
-	router.HandleFunc("/api", handler.handleRequest())
-	router.HandleFunc("/api2", handler.handleRequest2())
-}
-
-func (h *ApiHandler) handleRequest() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Request received1")
-		fmt.Fprintf(w, "Response from API1")
-	}
-}
-
-func (h *ApiHandler) handleRequest2() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Request received2")
-		fmt.Fprintf(w, "Response from API2")
-	}
-}
 
 func main() {
 	url := "localhost:8080"
@@ -47,7 +26,7 @@ func main() {
 	fmt.Printf("%+v\n", cfg)
 
 	router := http.NewServeMux()
-	NewApiHandler(router)
+	auth.NewAuthHandler(router)
 
 	server := &http.Server{
 		Addr:    ":8080",
