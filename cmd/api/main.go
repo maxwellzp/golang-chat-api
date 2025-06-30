@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/maxwellzp/golang-chat-api/internal/auth"
 	"github.com/maxwellzp/golang-chat-api/internal/config"
+	"github.com/maxwellzp/golang-chat-api/internal/message"
 	"github.com/maxwellzp/golang-chat-api/internal/room"
 	"go.uber.org/zap"
 	"net/http"
@@ -26,9 +27,11 @@ func main() {
 	cfg := config.Load()
 	fmt.Printf("%+v\n", cfg)
 
+	// REST API Handlers
 	router := http.NewServeMux()
 	auth.NewAuthHandler(router)
 	room.NewRoomHandler(router)
+	message.NewMessageHandler(router)
 
 	server := &http.Server{
 		Addr:    ":8080",
