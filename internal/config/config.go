@@ -32,7 +32,7 @@ func Load(logger *zap.SugaredLogger) *Config {
 		Db: DbConfig{
 			PostgresUser:     os.Getenv("POSTGRES_USER"),
 			PostgresPassword: os.Getenv("POSTGRES_PASSWORD"),
-			PostgresDatabase: os.Getenv("POSTGRES_DATABASE"),
+			PostgresDatabase: os.Getenv("POSTGRES_DB"),
 			PostgresHost:     os.Getenv("POSTGRES_HOST"),
 			PostgresPort:     os.Getenv("POSTGRES_PORT"),
 		},
