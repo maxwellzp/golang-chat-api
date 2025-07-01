@@ -6,10 +6,13 @@ import (
 )
 
 type RoomHandler struct {
+	RoomService *RoomService
 }
 
-func NewRoomHandler(router *http.ServeMux) {
-	handler := &RoomHandler{}
+func NewRoomHandler(router *http.ServeMux, roomService *RoomService) {
+	handler := &RoomHandler{
+		RoomService: roomService,
+	}
 	router.HandleFunc("POST /room/create", handler.Create())
 	router.HandleFunc("PATCH /room/update/{id}", handler.Update())
 	router.HandleFunc("DELETE /room/delete/{id}", handler.Delete())

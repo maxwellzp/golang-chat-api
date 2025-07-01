@@ -6,10 +6,13 @@ import (
 )
 
 type MessageHandler struct {
+	MessageService *MessageService
 }
 
-func NewMessageHandler(router *http.ServeMux) {
-	handler := &MessageHandler{}
+func NewMessageHandler(router *http.ServeMux, messageService *MessageService) {
+	handler := &MessageHandler{
+		MessageService: messageService,
+	}
 	router.HandleFunc("POST /message/create", handler.Create())
 	router.HandleFunc("PATCH /message/update/{id}", handler.Update())
 }

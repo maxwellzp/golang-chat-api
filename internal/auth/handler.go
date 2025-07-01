@@ -6,10 +6,14 @@ import (
 	"net/http"
 )
 
-type AuthHandler struct{}
+type AuthHandler struct {
+	AuthService *AuthService
+}
 
-func NewAuthHandler(router *http.ServeMux) {
-	handler := &AuthHandler{}
+func NewAuthHandler(router *http.ServeMux, authService *AuthService) {
+	handler := &AuthHandler{
+		AuthService: authService,
+	}
 	router.HandleFunc("POST /login", handler.Login())
 	router.HandleFunc("POST /register", handler.Register())
 }
