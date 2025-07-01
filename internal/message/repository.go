@@ -1,12 +1,16 @@
 package message
 
-import "context"
+import (
+	"context"
+	"github.com/maxwellzp/golang-chat-api/internal/db"
+)
 
 type MessageRepository struct {
+	Database *db.Db
 }
 
-func NewMessageRepository() *MessageRepository {
-	return &MessageRepository{}
+func NewMessageRepository(database *db.Db) *MessageRepository {
+	return &MessageRepository{Database: database}
 }
 
 func (r *MessageRepository) Create(ctx context.Context, msg *Message) error {

@@ -1,12 +1,16 @@
 package room
 
-import "context"
+import (
+	"context"
+	"github.com/maxwellzp/golang-chat-api/internal/db"
+)
 
 type RoomRepository struct {
+	Database *db.Db
 }
 
-func NewRoomRepository() *RoomRepository {
-	return &RoomRepository{}
+func NewRoomRepository(database *db.Db) *RoomRepository {
+	return &RoomRepository{Database: database}
 }
 
 func (r *RoomRepository) Create(ctx context.Context, room *Room) error {
