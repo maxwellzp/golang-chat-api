@@ -8,35 +8,47 @@ import (
 	"github.com/maxwellzp/golang-chat-api/internal/logger"
 	"github.com/maxwellzp/golang-chat-api/internal/message"
 	"github.com/maxwellzp/golang-chat-api/internal/room"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 func main() {
-	sugar, err := logger.NewLogger()
+	// Temporary logger to catch early config errors
+	tempLogger := zap.NewExample().Sugar()
+
+	// Load config
+	cfg := config.Load(tempLogger)
+
+	// Instantiate proper Zap logger based on APP_ENV
+	log, err := logger.NewLogger(cfg)
 	if err != nil {
-		log.Fatalf("failed to initialize logger: %v", err)
+		log.Fatalw("Failed to initialize logger",
+			"err", err,
+		)
 	}
 
-	cfg := config.Load(sugar)
-	sugar.Infof("%+v", cfg)
-
-	dbInstance, err := db.NewDb(context.Background(), cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+	dbInstance, err := db.NewDb(ctx, cfg)
 	if err != nil {
-		log.Fatalf("failed to initialize db: %v", err)
+		log.Fatalw("Failed to initialize db",
+			"err", err,
+		)
 	}
+	log.Debugw("Database connection established")
 
-	// Database Repositories
+	// Instantiate database repositories
 	authRepo := auth.NewAuthRepository(dbInstance)
 	roomRepo := room.NewRoomRepository(dbInstance)
 	messageRepo := message.NewMessageRepository(dbInstance)
 
-	// Business logic services
+	// Instantiate business logic services
 	authService := auth.NewAuthService(authRepo)
 	roomService := room.NewRoomService(roomRepo)
 	messageService := message.NewMessageService(messageRepo)
 
-	// REST API Handlers
+	// Bind REST API Handlers to ServeMux
 	router := http.NewServeMux()
 	auth.NewAuthHandler(router, authService)
 	room.NewRoomHandler(router, roomService)
@@ -47,6 +59,15 @@ func main() {
 		Handler: router,
 	}
 
-	sugar.Infof("Server running on port :%s", cfg.Server.Port)
-	server.ListenAndServe()
+	log.Infow("Server running",
+		"port", cfg.Server.Port,
+		"env", cfg.Application.AppEnv,
+	)
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalw("Failed to start server",
+			"port", cfg.Server.Port,
+			"env", cfg.Application.AppEnv,
+			"err", err,
+		)
+	}
 }
