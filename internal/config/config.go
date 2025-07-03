@@ -32,7 +32,7 @@ func Load(logger *zap.SugaredLogger) *Config {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		// Environment variables can also be set via terminal, bash script ...
-		// APP_ENV=dev go run cmd/api/main.go
+		// APP_ENV=dev go run cmd/server/main.go
 		logger.Warnw("No .env file found")
 	}
 
