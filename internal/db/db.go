@@ -25,7 +25,6 @@ func NewDb(ctx context.Context, cfg *config.Config) (*Db, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
 
 	if pingErr := db.PingContext(ctx); pingErr != nil {
 		log.Fatal(pingErr)
