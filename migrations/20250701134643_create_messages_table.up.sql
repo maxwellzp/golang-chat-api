@@ -6,6 +6,7 @@ CREATE TABLE messages
     receiver_id INT REFERENCES users (id) ON DELETE CASCADE,
     content     TEXT      NOT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CHECK (
         (room_id IS NOT NULL AND receiver_id IS NULL) OR
