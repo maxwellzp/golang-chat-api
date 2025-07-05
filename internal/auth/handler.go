@@ -2,17 +2,17 @@ package auth
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/maxwellzp/golang-chat-api/internal/httpx"
 	"net/http"
 )
 
 type AuthHandler struct {
-	AuthService *AuthService
+	authService *AuthService
 }
 
 func NewAuthHandler(router *http.ServeMux, authService *AuthService) {
 	handler := &AuthHandler{
-		AuthService: authService,
+		authService: authService,
 	}
 	router.HandleFunc("POST /login", handler.Login())
 	router.HandleFunc("POST /register", handler.Register())
@@ -20,35 +20,34 @@ func NewAuthHandler(router *http.ServeMux, authService *AuthService) {
 
 func (h *AuthHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Login")
 		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
-		fmt.Printf("Login: %#v\n", req)
-		resp := LoginResponse{
-			Token: "login test token",
+		_, token, err := h.authService.Login(r.Context(), req.Email, req.Password)
+		if err != nil {
+			httpx.WriteError(w, http.StatusUnauthorized, err.Error())
+			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
+		resp := LoginResponse{
+			Token: token,
+		}
+		httpx.WriteJSON(w, http.StatusOK, resp)
 	}
 }
 func (h *AuthHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Register")
 		var req RegisterRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
-		fmt.Printf("Register: %#v\n", req)
-		resp := RegisterResponse{
-			Token: "register test token",
+		u, err := h.authService.Register(r.Context(), req.Username, req.Email, req.Password)
+		if err != nil {
+			httpx.WriteError(w, http.StatusBadRequest, err.Error())
+			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
+		httpx.WriteJSON(w, http.StatusCreated, u)
 	}
 }
