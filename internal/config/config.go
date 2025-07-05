@@ -10,6 +10,10 @@ type ApplicationConfig struct {
 	AppEnv string
 }
 
+type AuthConfig struct {
+	JwtSecret string
+}
+
 type DbConfig struct {
 	PostgresUser     string
 	PostgresPassword string
@@ -26,6 +30,7 @@ type Config struct {
 	Application ApplicationConfig
 	Db          DbConfig
 	Server      ServerConfig
+	Auth        AuthConfig
 }
 
 func Load(logger *zap.SugaredLogger) *Config {
@@ -49,6 +54,9 @@ func Load(logger *zap.SugaredLogger) *Config {
 		},
 		Server: ServerConfig{
 			Port: getEnv(logger, "SERVER_PORT", "8080"),
+		},
+		Auth: AuthConfig{
+			JwtSecret: mustGetEnv(logger, "JWT_SECRET"),
 		},
 	}
 }
