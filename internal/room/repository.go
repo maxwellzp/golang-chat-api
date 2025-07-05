@@ -69,8 +69,8 @@ func (r *RoomRepository) GetByID(ctx context.Context, roomID int) (*Room, error)
 	query := `SELECT id, name, is_private, created_by, created_at FROM rooms WHERE id = $1`
 	row := r.database.QueryRowContext(ctx, query, roomID)
 
-	var msg Room
-	err := row.Scan(&msg.ID, &msg.Name, &msg.IsPrivate, &msg.CreatedBy, &msg.CreatedAt)
+	var rm Room
+	err := row.Scan(&rm.ID, &rm.Name, &rm.IsPrivate, &rm.CreatedBy, &rm.CreatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -78,7 +78,7 @@ func (r *RoomRepository) GetByID(ctx context.Context, roomID int) (*Room, error)
 		}
 		return nil, err
 	}
-	return &msg, nil
+	return &rm, nil
 }
 
 func (r *RoomRepository) List(ctx context.Context) ([]*Room, error) {
