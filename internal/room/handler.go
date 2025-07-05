@@ -3,6 +3,7 @@ package room
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/maxwellzp/golang-chat-api/internal/httpx"
 	"net/http"
 	"strconv"
 )
@@ -28,19 +29,15 @@ func (h *RoomHandler) Create() http.HandlerFunc {
 		user := 1
 		var req CreateRoomRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 		rm, err := h.roomService.Create(r.Context(), user, req)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(rm); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		httpx.WriteJSON(w, http.StatusCreated, rm)
 	}
 }
 
@@ -49,22 +46,22 @@ func (h *RoomHandler) Update() http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			http.Error(w, "Invalid id", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid room id")
 			return
 		}
 
 		var req UpdateRoomRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
 		if err := h.roomService.Update(r.Context(), req, id); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		httpx.WriteJSON(w, http.StatusNoContent, nil)
 	}
 }
 
@@ -73,15 +70,15 @@ func (h *RoomHandler) Delete() http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			http.Error(w, "Invalid id", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid room id")
 			return
 		}
 
 		if err := h.roomService.Delete(r.Context(), id); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		httpx.WriteJSON(w, http.StatusNoContent, nil)
 	}
 }
 
@@ -89,47 +86,35 @@ func (h *RoomHandler) GetByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		if idStr == "" {
-			http.Error(w, "Missing id parameter", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Missing room id parameter")
 			return
 		}
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			http.Error(w, "Invalid id", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid room id")
 			return
 		}
-		msg, err := h.roomService.GetByID(r.Context(), id)
+		rm, err := h.roomService.GetByID(r.Context(), id)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
-		if msg == nil {
-			http.Error(w, "room not found", http.StatusNotFound)
+		if rm == nil {
+			httpx.WriteError(w, http.StatusNotFound, "Room not found")
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-
-		if err = json.NewEncoder(w).Encode(msg); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		httpx.WriteJSON(w, http.StatusOK, rm)
 	}
 }
 
 func (h *RoomHandler) List() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		rooms, err := h.roomService.List(r.Context())
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
-
-		w.Header().Set("Content-Type", "application/json")
-
-		if err = json.NewEncoder(w).Encode(rooms); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		httpx.WriteJSON(w, http.StatusOK, rooms)
 	}
 }

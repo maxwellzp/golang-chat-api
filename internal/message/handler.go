@@ -3,6 +3,7 @@ package message
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/maxwellzp/golang-chat-api/internal/httpx"
 	"net/http"
 	"strconv"
 )
@@ -26,20 +27,16 @@ func (h *MessageHandler) Create() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateMessageRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
 		msg, err := h.messageService.Create(r.Context(), req)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(msg); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		httpx.WriteJSON(w, http.StatusCreated, msg)
 	}
 }
 
@@ -50,16 +47,15 @@ func (h *MessageHandler) Update() http.HandlerFunc {
 
 		var req UpdateMessageRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
 		if err := h.messageService.Update(r.Context(), req); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
-
-		w.WriteHeader(http.StatusNoContent)
+		httpx.WriteJSON(w, http.StatusNoContent, nil)
 	}
 }
 
@@ -68,15 +64,15 @@ func (h *MessageHandler) Delete() http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			http.Error(w, "Invalid id", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid message id")
 			return
 		}
 		senderID := 1
 		if err := h.messageService.Delete(r.Context(), id, senderID); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		httpx.WriteJSON(w, http.StatusNoContent, nil)
 	}
 }
 
@@ -84,28 +80,24 @@ func (h *MessageHandler) GetByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		if idStr == "" {
-			http.Error(w, "Missing id parameter", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Missing id parameter")
 			return
 		}
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			http.Error(w, "Invalid id", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid message id")
 			return
 		}
 		msg, err := h.messageService.GetByID(r.Context(), id)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
 		if msg == nil {
-			http.Error(w, "Message not found", http.StatusNotFound)
+			httpx.WriteError(w, http.StatusNotFound, "Message not found")
+			return
 		}
-
-		w.Header().Set("Content-Type", "application/json")
-
-		if err = json.NewEncoder(w).Encode(msg); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		httpx.WriteJSON(w, http.StatusOK, msg)
 	}
 }
 
@@ -120,7 +112,7 @@ func (h *MessageHandler) List() http.HandlerFunc {
 		if roomIDStr != "" {
 			id, err := strconv.Atoi(roomIDStr)
 			if err != nil {
-				http.Error(w, "Invalid room_id", http.StatusBadRequest)
+				httpx.WriteError(w, http.StatusBadRequest, "Invalid room_id")
 				return
 			}
 			roomID = &id
@@ -129,7 +121,7 @@ func (h *MessageHandler) List() http.HandlerFunc {
 		if receiverIDStr != "" {
 			id, err := strconv.Atoi(receiverIDStr)
 			if err != nil {
-				http.Error(w, "Invalid receiver_id", http.StatusBadRequest)
+				httpx.WriteError(w, http.StatusBadRequest, "Invalid receiver_id")
 				return
 			}
 			receiverID = &id
@@ -137,14 +129,9 @@ func (h *MessageHandler) List() http.HandlerFunc {
 
 		messages, err := h.messageService.List(r.Context(), roomID, receiverID)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
-
-		w.Header().Set("Content-Type", "application/json")
-
-		if err = json.NewEncoder(w).Encode(messages); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		httpx.WriteJSON(w, http.StatusOK, messages)
 	}
 }
