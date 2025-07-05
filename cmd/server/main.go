@@ -8,6 +8,7 @@ import (
 	"github.com/maxwellzp/golang-chat-api/internal/logger"
 	"github.com/maxwellzp/golang-chat-api/internal/message"
 	"github.com/maxwellzp/golang-chat-api/internal/room"
+	"github.com/maxwellzp/golang-chat-api/internal/user"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -39,12 +40,12 @@ func main() {
 	log.Debugw("Database connection established")
 
 	// Instantiate database repositories
-	authRepo := auth.NewAuthRepository(dbInstance)
+	userRepo := user.NewUserRepository(dbInstance)
 	roomRepo := room.NewRoomRepository(dbInstance)
 	messageRepo := message.NewMessageRepository(dbInstance)
 
 	// Instantiate business logic services
-	authService := auth.NewAuthService(authRepo)
+	authService := auth.NewAuthService(userRepo, cfg.Auth.JwtSecret)
 	roomService := room.NewRoomService(roomRepo)
 	messageService := message.NewMessageService(messageRepo)
 
