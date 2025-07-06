@@ -54,6 +54,11 @@ func main() {
 
 	// Bind REST API Handlers to ServeMux
 	router := http.NewServeMux()
+	router.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
 	auth.NewAuthHandler(router, authService)
 	room.NewRoomHandler(router, roomService)
 	message.NewMessageHandler(router, messageService)
