@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"os"
@@ -15,11 +16,16 @@ type AuthConfig struct {
 }
 
 type DbConfig struct {
-	PostgresUser     string
-	PostgresPassword string
-	PostgresHost     string
-	PostgresPort     string
-	PostgresDatabase string
+	User     string
+	Password string
+	Host     string
+	Port     string
+	Database string
+}
+
+func (c *DbConfig) DSN() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		c.User, c.Password, c.Host, c.Port, c.Database)
 }
 
 type ServerConfig struct {
@@ -46,11 +52,11 @@ func Load(logger *zap.SugaredLogger) *Config {
 			AppEnv: getEnv(logger, "APP_ENV", "prod"),
 		},
 		Db: DbConfig{
-			PostgresUser:     mustGetEnv(logger, "POSTGRES_USER"),
-			PostgresPassword: mustGetEnv(logger, "POSTGRES_PASSWORD"),
-			PostgresDatabase: mustGetEnv(logger, "POSTGRES_DB"),
-			PostgresHost:     mustGetEnv(logger, "POSTGRES_HOST"),
-			PostgresPort:     getEnv(logger, "POSTGRES_PORT", "5432"),
+			User:     mustGetEnv(logger, "POSTGRES_USER"),
+			Password: mustGetEnv(logger, "POSTGRES_PASSWORD"),
+			Database: mustGetEnv(logger, "POSTGRES_DB"),
+			Host:     mustGetEnv(logger, "POSTGRES_HOST"),
+			Port:     getEnv(logger, "POSTGRES_PORT", "5432"),
 		},
 		Server: ServerConfig{
 			Port: getEnv(logger, "SERVER_PORT", "8080"),

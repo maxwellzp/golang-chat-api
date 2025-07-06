@@ -6,7 +6,6 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/maxwellzp/golang-chat-api/internal/config"
-	"log"
 )
 
 type Db struct {
@@ -14,23 +13,14 @@ type Db struct {
 }
 
 func NewDb(ctx context.Context, cfg *config.Config) (*Db, error) {
-	DSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Db.PostgresHost,
-		cfg.Db.PostgresPort,
-		cfg.Db.PostgresUser,
-		cfg.Db.PostgresPassword,
-		cfg.Db.PostgresDatabase,
-	)
-	db, err := sql.Open("postgres", DSN)
+	db, err := sql.Open("postgres", cfg.Db.DSN())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open DB connection: %w", err)
 	}
 
 	if pingErr := db.PingContext(ctx); pingErr != nil {
-		log.Fatal(pingErr)
+		return nil, fmt.Errorf("failed to ping DB: %w", err)
 	}
 
-	fmt.Println("Connected!")
-
-	return &Db{db}, nil
+	return &Db{DB: db}, nil
 }

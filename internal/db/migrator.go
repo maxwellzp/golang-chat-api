@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -12,15 +11,7 @@ import (
 )
 
 func RunMigrations(cfg *config.Config) error {
-	DSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Db.PostgresHost,
-		cfg.Db.PostgresPort,
-		cfg.Db.PostgresUser,
-		cfg.Db.PostgresPassword,
-		cfg.Db.PostgresDatabase,
-	)
-
-	db, err := sql.Open("postgres", DSN)
+	db, err := sql.Open("postgres", cfg.Db.DSN())
 	if err != nil {
 		return errors.New("failed to connect to DB: " + err.Error())
 	}
