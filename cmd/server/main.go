@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/maxwellzp/golang-chat-api/internal/auth"
 	"github.com/maxwellzp/golang-chat-api/internal/config"
 	"github.com/maxwellzp/golang-chat-api/internal/db"
@@ -11,6 +12,8 @@ import (
 	"github.com/maxwellzp/golang-chat-api/internal/user"
 	"go.uber.org/zap"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -24,7 +27,7 @@ func main() {
 	// Instantiate proper Zap logger based on APP_ENV
 	log, err := logger.NewLogger(cfg)
 	if err != nil {
-		log.Fatalw("Failed to initialize logger",
+		tempLogger.Fatalw("Failed to initialize logger",
 			"err", err,
 		)
 	}
@@ -64,11 +67,29 @@ func main() {
 		"port", cfg.Server.Port,
 		"env", cfg.Application.AppEnv,
 	)
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalw("Failed to start server",
-			"port", cfg.Server.Port,
-			"env", cfg.Application.AppEnv,
+
+	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalw("Failed to start server",
+				"port", cfg.Server.Port,
+				"env", cfg.Application.AppEnv,
+				"err", err,
+			)
+		}
+	}()
+	<-shutdownCtx.Done()
+	log.Infow("Shutting down server...")
+
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Errorw("Failed to shutdown server",
 			"err", err,
 		)
+	} else {
+		log.Infow("Server gracefully stopped")
 	}
 }
