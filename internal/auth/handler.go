@@ -10,12 +10,10 @@ type AuthHandler struct {
 	authService *AuthService
 }
 
-func NewAuthHandler(router *http.ServeMux, authService *AuthService) {
-	handler := &AuthHandler{
+func NewAuthHandler(authService *AuthService) *AuthHandler {
+	return &AuthHandler{
 		authService: authService,
 	}
-	router.HandleFunc("POST /login", handler.Login())
-	router.HandleFunc("POST /register", handler.Register())
 }
 
 func (h *AuthHandler) Login() http.HandlerFunc {

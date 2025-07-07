@@ -12,15 +12,10 @@ type MessageHandler struct {
 	messageService *MessageService
 }
 
-func NewMessageHandler(router *http.ServeMux, messageService *MessageService) {
-	handler := &MessageHandler{
+func NewMessageHandler(messageService *MessageService) *MessageHandler {
+	return &MessageHandler{
 		messageService: messageService,
 	}
-	router.HandleFunc("POST /messages/create", handler.Create())
-	router.HandleFunc("PATCH /messages/update/{id}", handler.Update())
-	router.HandleFunc("DELETE /messages/delete/{id}", handler.Delete())
-	router.HandleFunc("GET /messages/{id}", handler.GetByID())
-	router.HandleFunc("GET /messages/list", handler.List())
 }
 
 func (h *MessageHandler) Create() http.HandlerFunc {
