@@ -29,11 +29,11 @@ func (r *RoomRepository) Create(ctx context.Context, room *Room) error {
 	return nil
 }
 
-func (r *RoomRepository) Update(ctx context.Context, name string, isPrivate bool, roomID int) error {
+func (r *RoomRepository) Update(ctx context.Context, id int64, userID int64, name string, isPrivate bool) error {
 	query := `
-		UPDATE rooms SET name = $1, is_private = $2 WHERE id = $3;
+		UPDATE rooms SET name = $1, is_private = $2 WHERE id = $3 AND created_by = $4;
 `
-	res, err := r.database.ExecContext(ctx, query, name, isPrivate, roomID)
+	res, err := r.database.ExecContext(ctx, query, name, isPrivate, id, userID)
 	if err != nil {
 		return err
 	}
@@ -49,9 +49,9 @@ func (r *RoomRepository) Update(ctx context.Context, name string, isPrivate bool
 	return nil
 }
 
-func (r *RoomRepository) Delete(ctx context.Context, roomID int) error {
+func (r *RoomRepository) Delete(ctx context.Context, roomID int64, userID int64) error {
 	res, err := r.database.ExecContext(ctx,
-		"DELETE FROM rooms WHERE id = $1", roomID)
+		"DELETE FROM rooms WHERE id = $1 AND created_by = $2", roomID, userID)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (r *RoomRepository) Delete(ctx context.Context, roomID int) error {
 	return nil
 }
 
-func (r *RoomRepository) GetByID(ctx context.Context, roomID int) (*Room, error) {
+func (r *RoomRepository) GetByID(ctx context.Context, roomID int64) (*Room, error) {
 	query := `SELECT id, name, is_private, created_by, created_at FROM rooms WHERE id = $1`
 	row := r.database.QueryRowContext(ctx, query, roomID)
 

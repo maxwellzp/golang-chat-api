@@ -3,9 +3,9 @@ package room
 import "time"
 
 type Room struct {
-	ID        int       `json:"id"`
+	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
 	IsPrivate bool      `json:"is_private"`
-	CreatedBy *int      `json:"created_by"`
+	CreatedBy *int64    `json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`
 }

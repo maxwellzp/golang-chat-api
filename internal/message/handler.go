@@ -2,7 +2,6 @@ package message
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/maxwellzp/golang-chat-api/internal/httpx"
 	"net/http"
 	"strconv"
@@ -20,13 +19,18 @@ func NewMessageHandler(messageService *MessageService) *MessageHandler {
 
 func (h *MessageHandler) Create() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := httpx.GetUserID(r.Context())
+		if err != nil {
+			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
 		var req CreateMessageRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
-		msg, err := h.messageService.Create(r.Context(), req)
+		msg, err := h.messageService.Create(r.Context(), userID, req)
 		if err != nil {
 			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
@@ -37,8 +41,16 @@ func (h *MessageHandler) Create() http.HandlerFunc {
 
 func (h *MessageHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		fmt.Println("Update a message", id)
+		userID, err := httpx.GetUserID(r.Context())
+		if err != nil {
+			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+		rawID := r.PathValue("id")
+		id, err := strconv.ParseInt(rawID, 10, 64)
+		if err != nil {
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+		}
 
 		var req UpdateMessageRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -46,7 +58,7 @@ func (h *MessageHandler) Update() http.HandlerFunc {
 			return
 		}
 
-		if err := h.messageService.Update(r.Context(), req); err != nil {
+		if err := h.messageService.Update(r.Context(), id, userID, req); err != nil {
 			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
@@ -56,14 +68,17 @@ func (h *MessageHandler) Update() http.HandlerFunc {
 
 func (h *MessageHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.PathValue("id")
-		id, err := strconv.Atoi(idStr)
+		userID, err := httpx.GetUserID(r.Context())
 		if err != nil {
-			httpx.WriteError(w, http.StatusBadRequest, "Invalid message id")
+			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-		senderID := 1
-		if err := h.messageService.Delete(r.Context(), id, senderID); err != nil {
+		rawID := r.PathValue("id")
+		id, err := strconv.ParseInt(rawID, 10, 64)
+		if err != nil {
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+		}
+		if err := h.messageService.Delete(r.Context(), id, userID); err != nil {
 			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
 		}
@@ -73,17 +88,17 @@ func (h *MessageHandler) Delete() http.HandlerFunc {
 
 func (h *MessageHandler) GetByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.PathValue("id")
-		if idStr == "" {
-			httpx.WriteError(w, http.StatusBadRequest, "Missing id parameter")
-			return
-		}
-		id, err := strconv.Atoi(idStr)
+		userID, err := httpx.GetUserID(r.Context())
 		if err != nil {
-			httpx.WriteError(w, http.StatusBadRequest, "Invalid message id")
+			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-		msg, err := h.messageService.GetByID(r.Context(), id)
+		rawID := r.PathValue("id")
+		id, err := strconv.ParseInt(rawID, 10, 64)
+		if err != nil {
+			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+		}
+		msg, err := h.messageService.GetByID(r.Context(), id, userID)
 		if err != nil {
 			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
 			return
@@ -101,11 +116,11 @@ func (h *MessageHandler) List() http.HandlerFunc {
 		roomIDStr := r.URL.Query().Get("room_id")
 		receiverIDStr := r.URL.Query().Get("receiver_id")
 
-		var roomID *int
-		var receiverID *int
+		var roomID *int64
+		var receiverID *int64
 
 		if roomIDStr != "" {
-			id, err := strconv.Atoi(roomIDStr)
+			id, err := strconv.ParseInt(roomIDStr, 10, 64)
 			if err != nil {
 				httpx.WriteError(w, http.StatusBadRequest, "Invalid room_id")
 				return
@@ -114,7 +129,7 @@ func (h *MessageHandler) List() http.HandlerFunc {
 		}
 
 		if receiverIDStr != "" {
-			id, err := strconv.Atoi(receiverIDStr)
+			id, err := strconv.ParseInt(receiverIDStr, 10, 64)
 			if err != nil {
 				httpx.WriteError(w, http.StatusBadRequest, "Invalid receiver_id")
 				return

@@ -4,14 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/maxwellzp/golang-chat-api/internal/contextkey"
 	"github.com/maxwellzp/golang-chat-api/internal/httpx"
 	"net/http"
 	"strings"
 )
-
-type contextKey string
-
-const UserIDContextKey contextKey = "user_id"
 
 func JWT(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -49,7 +46,7 @@ func JWT(secret string) func(http.Handler) http.Handler {
 				httpx.WriteError(w, http.StatusUnauthorized, "Invalid user_id in token")
 				return
 			}
-			ctx := context.WithValue(r.Context(), UserIDContextKey, int(userIDFloat))
+			ctx := context.WithValue(r.Context(), contextkey.UserID, int64(userIDFloat))
 			next.ServeHTTP(w, r.WithContext(ctx))
 
 		})
