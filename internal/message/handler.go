@@ -46,10 +46,10 @@ func (h *MessageHandler) Update() http.HandlerFunc {
 			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-		rawID := r.PathValue("id")
-		id, err := strconv.ParseInt(rawID, 10, 64)
+		id, err := httpx.ParseInt64Param(r, "id")
 		if err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+			return
 		}
 
 		var req UpdateMessageRequest
@@ -73,10 +73,10 @@ func (h *MessageHandler) Delete() http.HandlerFunc {
 			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-		rawID := r.PathValue("id")
-		id, err := strconv.ParseInt(rawID, 10, 64)
+		id, err := httpx.ParseInt64Param(r, "id")
 		if err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+			return
 		}
 		if err := h.messageService.Delete(r.Context(), id, userID); err != nil {
 			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
@@ -93,10 +93,10 @@ func (h *MessageHandler) GetByID() http.HandlerFunc {
 			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-		rawID := r.PathValue("id")
-		id, err := strconv.ParseInt(rawID, 10, 64)
+		id, err := httpx.ParseInt64Param(r, "id")
 		if err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+			return
 		}
 		msg, err := h.messageService.GetByID(r.Context(), id, userID)
 		if err != nil {

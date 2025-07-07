@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/maxwellzp/golang-chat-api/internal/httpx"
 	"net/http"
-	"strconv"
 )
 
 type RoomHandler struct {
@@ -45,10 +44,10 @@ func (h *RoomHandler) Update() http.HandlerFunc {
 			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-		rawID := r.PathValue("id")
-		id, err := strconv.ParseInt(rawID, 10, 64)
+		id, err := httpx.ParseInt64Param(r, "id")
 		if err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+			return
 		}
 
 		var req UpdateRoomRequest
@@ -73,10 +72,10 @@ func (h *RoomHandler) Delete() http.HandlerFunc {
 			httpx.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
-		rawID := r.PathValue("id")
-		id, err := strconv.ParseInt(rawID, 10, 64)
+		id, err := httpx.ParseInt64Param(r, "id")
 		if err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+			return
 		}
 
 		if err := h.roomService.Delete(r.Context(), id, userID); err != nil {
@@ -89,10 +88,10 @@ func (h *RoomHandler) Delete() http.HandlerFunc {
 
 func (h *RoomHandler) GetByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rawID := r.PathValue("id")
-		id, err := strconv.ParseInt(rawID, 10, 64)
+		id, err := httpx.ParseInt64Param(r, "id")
 		if err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid MessageID")
+			return
 		}
 		rm, err := h.roomService.GetByID(r.Context(), id)
 		if err != nil {
