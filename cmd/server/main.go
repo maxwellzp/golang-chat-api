@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/maxwellzp/golang-chat-api/internal/auth"
 	"github.com/maxwellzp/golang-chat-api/internal/config"
 	"github.com/maxwellzp/golang-chat-api/internal/db"
 	"github.com/maxwellzp/golang-chat-api/internal/logger"
 	"github.com/maxwellzp/golang-chat-api/internal/message"
+	appMiddleware "github.com/maxwellzp/golang-chat-api/internal/middleware"
 	"github.com/maxwellzp/golang-chat-api/internal/room"
 	"github.com/maxwellzp/golang-chat-api/internal/user"
 	"go.uber.org/zap"
@@ -52,20 +55,56 @@ func main() {
 	roomService := room.NewRoomService(roomRepo)
 	messageService := message.NewMessageService(messageRepo)
 
-	// Bind REST API Handlers to ServeMux
-	router := http.NewServeMux()
-	router.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+	// REST API Handlers
+	authHandler := auth.NewAuthHandler(authService)
+	roomHandler := room.NewRoomHandler(roomService)
+	messageHandler := message.NewMessageHandler(messageService)
+
+	// Middleware
+	jwtMiddleWare := appMiddleware.JWT(cfg.Auth.JwtSecret)
+
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	// Health check (public)
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
 
-	auth.NewAuthHandler(router, authService)
-	room.NewRoomHandler(router, roomService)
-	message.NewMessageHandler(router, messageService)
+	// Auth (public)
+	r.Post("/login", authHandler.Login())
+	r.Post("/register", authHandler.Register())
+
+	// Messages (all protected)
+	r.Route("/messages", func(r chi.Router) {
+		r.Use(jwtMiddleWare)
+
+		r.Post("/create", messageHandler.Create())
+		r.Patch("/update/{id}", messageHandler.Update())
+		r.Delete("/delete/{id}", messageHandler.Delete())
+		r.Get("/{id}", messageHandler.GetByID())
+		r.Get("/list", messageHandler.List())
+	})
+
+	// Rooms
+	r.Route("/rooms", func(r chi.Router) {
+		// Public endpoints
+		r.Get("/list", roomHandler.List())
+		r.Get("/{id}", roomHandler.GetByID())
+
+		// Protected endpoints
+		r.Group(func(r chi.Router) {
+			r.Use(jwtMiddleWare)
+			r.Post("/create", roomHandler.Create())
+			r.Patch("/update/{id}", roomHandler.Update())
+			r.Delete("/delete/{id}", roomHandler.Delete())
+		})
+	})
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Server.Port,
-		Handler: router,
+		Handler: r,
 	}
 
 	log.Infow("Server running",
