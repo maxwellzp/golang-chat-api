@@ -3,17 +3,20 @@ package message
 import (
 	"encoding/json"
 	"github.com/maxwellzp/golang-chat-api/internal/httpx"
+	"github.com/maxwellzp/golang-chat-api/internal/validatorx"
 	"net/http"
 	"strconv"
 )
 
 type MessageHandler struct {
 	messageService *MessageService
+	validator      *validatorx.Validator
 }
 
-func NewMessageHandler(messageService *MessageService) *MessageHandler {
+func NewMessageHandler(messageService *MessageService, validator *validatorx.Validator) *MessageHandler {
 	return &MessageHandler{
 		messageService: messageService,
+		validator:      validator,
 	}
 }
 
@@ -27,6 +30,16 @@ func (h *MessageHandler) Create() http.HandlerFunc {
 		var req CreateMessageRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
+			return
+		}
+
+		if err := h.validator.Validate(&req); err != nil {
+			httpx.WriteValidationError(w, err)
+			return
+		}
+
+		if err := req.Validate(); err != nil {
+			httpx.WriteValidationError(w, err)
 			return
 		}
 
@@ -55,6 +68,11 @@ func (h *MessageHandler) Update() http.HandlerFunc {
 		var req UpdateMessageRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
+			return
+		}
+
+		if err := h.validator.Validate(&req); err != nil {
+			httpx.WriteValidationError(w, err)
 			return
 		}
 

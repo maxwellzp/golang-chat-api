@@ -3,16 +3,19 @@ package room
 import (
 	"encoding/json"
 	"github.com/maxwellzp/golang-chat-api/internal/httpx"
+	"github.com/maxwellzp/golang-chat-api/internal/validatorx"
 	"net/http"
 )
 
 type RoomHandler struct {
 	roomService *RoomService
+	validator   *validatorx.Validator
 }
 
-func NewRoomHandler(roomService *RoomService) *RoomHandler {
+func NewRoomHandler(roomService *RoomService, validator *validatorx.Validator) *RoomHandler {
 	return &RoomHandler{
 		roomService: roomService,
+		validator:   validator,
 	}
 }
 
@@ -28,6 +31,12 @@ func (h *RoomHandler) Create() http.HandlerFunc {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
+
+		if err := h.validator.Validate(&req); err != nil {
+			httpx.WriteValidationError(w, err)
+			return
+		}
+
 		rm, err := h.roomService.Create(r.Context(), userID, req)
 		if err != nil {
 			httpx.WriteError(w, http.StatusInternalServerError, "Something went wrong. Please try again later")
@@ -53,6 +62,11 @@ func (h *RoomHandler) Update() http.HandlerFunc {
 		var req UpdateRoomRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "Invalid request body")
+			return
+		}
+
+		if err := h.validator.Validate(&req); err != nil {
+			httpx.WriteValidationError(w, err)
 			return
 		}
 

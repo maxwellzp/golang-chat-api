@@ -11,7 +11,7 @@ type LoginResponse struct {
 
 type RegisterRequest struct {
 	Email    string `json:"email" validate:"required,email,max=255"`
-	Password string `json:"password" validate:"required,min=12,max=40,containsuppercase,containslowercase,containsnumber,containsspecial"`
+	Password string `json:"password" validate:"required,min=8,max=40,containsuppercase,containslowercase,containsnumber,containsspecial"`
 	Username string `json:"username" validate:"required,min=5,max=30,alphanumunicode"`
 }
 
