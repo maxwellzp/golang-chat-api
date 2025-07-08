@@ -13,6 +13,7 @@ import (
 	appMiddleware "github.com/maxwellzp/golang-chat-api/internal/middleware"
 	"github.com/maxwellzp/golang-chat-api/internal/room"
 	"github.com/maxwellzp/golang-chat-api/internal/user"
+	validatorx "github.com/maxwellzp/golang-chat-api/internal/validatorx"
 	"go.uber.org/zap"
 	"net/http"
 	"os/signal"
@@ -55,10 +56,13 @@ func main() {
 	roomService := room.NewRoomService(roomRepo)
 	messageService := message.NewMessageService(messageRepo)
 
+	// Validator
+	val := validatorx.NewValidator()
+
 	// REST API Handlers
-	authHandler := auth.NewAuthHandler(authService)
-	roomHandler := room.NewRoomHandler(roomService)
-	messageHandler := message.NewMessageHandler(messageService)
+	authHandler := auth.NewAuthHandler(authService, val)
+	roomHandler := room.NewRoomHandler(roomService, val)
+	messageHandler := message.NewMessageHandler(messageService, val)
 
 	// Middleware
 	jwtMiddleWare := appMiddleware.JWT(cfg.Auth.JwtSecret)
