@@ -64,7 +64,7 @@ func main() {
 	val := validatorx.NewValidator()
 
 	// REST API Handlers
-	authHandler := auth.NewAuthHandler(authService, val)
+	authHandler := auth.NewAuthHandler(authService, val, log)
 	roomHandler := room.NewRoomHandler(roomService, val)
 	messageHandler := message.NewMessageHandler(messageService, val)
 	log.Debugw("API Handlers initialized")
@@ -74,22 +74,26 @@ func main() {
 
 	r := chi.NewRouter()
 	log.Debugw("Router initialized")
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	log.Debugw("Middleware stack applied: Logger, Recoverer")
+	log.Debugw("Middleware stack applied: Recoverer")
 
-	// Health check (public)
-	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
+	// Public routes
+	r.Group(func(r chi.Router) {
+		r.Use(appMiddleware.Logging(log))
+		// Health check (public)
+		r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("ok"))
+		})
+		r.Post("/login", authHandler.Login())
+		r.Post("/register", authHandler.Register())
+		r.Get("/rooms/list", roomHandler.List())
+		r.Get("/rooms/{id}", roomHandler.GetByID())
 	})
-
-	// Auth (public)
-	r.Post("/login", authHandler.Login())
-	r.Post("/register", authHandler.Register())
 
 	// Messages (all protected)
 	r.Route("/messages", func(r chi.Router) {
 		r.Use(jwtMiddleWare)
+		r.Use(appMiddleware.Logging(log))
 
 		r.Post("/create", messageHandler.Create())
 		r.Patch("/update/{id}", messageHandler.Update())
@@ -98,15 +102,12 @@ func main() {
 		r.Get("/list", messageHandler.List())
 	})
 
-	// Rooms
+	// Rooms (protected)
 	r.Route("/rooms", func(r chi.Router) {
-		// Public endpoints
-		r.Get("/list", roomHandler.List())
-		r.Get("/{id}", roomHandler.GetByID())
-
-		// Protected endpoints
 		r.Group(func(r chi.Router) {
 			r.Use(jwtMiddleWare)
+			r.Use(appMiddleware.Logging(log))
+
 			r.Post("/create", roomHandler.Create())
 			r.Patch("/update/{id}", roomHandler.Update())
 			r.Delete("/delete/{id}", roomHandler.Delete())
