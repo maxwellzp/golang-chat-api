@@ -65,7 +65,7 @@ func main() {
 	messageHandler := message.NewMessageHandler(messageService, val)
 
 	// Middleware
-	jwtMiddleWare := appMiddleware.JWT(cfg.Auth.JwtSecret)
+	jwtMiddleWare := appMiddleware.JWT(cfg.Auth.JwtSecret, log)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
