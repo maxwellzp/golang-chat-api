@@ -38,23 +38,27 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
+
+	log.Debugw("Connecting to DB...", "dsn", cfg.Db.DSN())
 	dbInstance, err := db.NewDb(ctx, cfg)
 	if err != nil {
-		log.Fatalw("Failed to initialize db",
+		log.Fatalw("DB connection failed",
 			"err", err,
 		)
 	}
-	log.Debugw("Database connection established")
+	log.Infow("DB connected successfully")
 
 	// Instantiate database repositories
 	userRepo := user.NewUserRepository(dbInstance)
 	roomRepo := room.NewRoomRepository(dbInstance)
 	messageRepo := message.NewMessageRepository(dbInstance)
+	log.Debugw("Repositories initialized")
 
 	// Instantiate business logic services
 	authService := auth.NewAuthService(userRepo, cfg.Auth.JwtSecret)
 	roomService := room.NewRoomService(roomRepo)
 	messageService := message.NewMessageService(messageRepo)
+	log.Debugw("Business services initialized")
 
 	// Validator
 	val := validatorx.NewValidator()
@@ -63,13 +67,16 @@ func main() {
 	authHandler := auth.NewAuthHandler(authService, val)
 	roomHandler := room.NewRoomHandler(roomService, val)
 	messageHandler := message.NewMessageHandler(messageService, val)
+	log.Debugw("API Handlers initialized")
 
 	// Middleware
 	jwtMiddleWare := appMiddleware.JWT(cfg.Auth.JwtSecret, log)
 
 	r := chi.NewRouter()
+	log.Debugw("Router initialized")
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	log.Debugw("Middleware stack applied: Logger, Recoverer")
 
 	// Health check (public)
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +112,8 @@ func main() {
 			r.Delete("/delete/{id}", roomHandler.Delete())
 		})
 	})
+
+	log.Debugw("Routes registered: /login, /register, /messages/*, /rooms/*")
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Server.Port,
