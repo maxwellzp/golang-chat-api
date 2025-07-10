@@ -66,7 +66,7 @@ func main() {
 	// REST API Handlers
 	authHandler := auth.NewAuthHandler(authService, val, log)
 	roomHandler := room.NewRoomHandler(roomService, val)
-	messageHandler := message.NewMessageHandler(messageService, val)
+	messageHandler := message.NewMessageHandler(messageService, val, log)
 	log.Debugw("API Handlers initialized")
 
 	// Middleware
