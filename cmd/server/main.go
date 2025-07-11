@@ -55,7 +55,7 @@ func main() {
 	log.Debugw("Repositories initialized")
 
 	// Instantiate business logic services
-	authService := auth.NewAuthService(userRepo, cfg.Auth.JwtSecret)
+	authService := auth.NewAuthService(userRepo, cfg.Auth.JwtSecret, log)
 	roomService := room.NewRoomService(roomRepo)
 	messageService := message.NewMessageService(messageRepo)
 	log.Debugw("Business services initialized")
